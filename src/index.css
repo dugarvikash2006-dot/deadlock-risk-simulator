@@ -1,0 +1,52 @@
+@import 'tailwindcss';
+
+/* Design tokens — encodes the Phase 4 approved design system. Dark-only UI, no light theme toggle. */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --color-background: #0a0a0f;
+  --color-surface: #14141c;
+  --color-surface-raised: #1b1b26;
+  --color-border: #2a2a38;
+
+  --color-foreground: #e8e8ec;
+  --color-foreground-muted: #9a9aa8;
+
+  /* Status colors — Grant/Hold share Low/Moderate CTI hues intentionally (Phase 4 §2) */
+  --color-grant: #22c55e;
+  --color-hold: #3b82f6;
+
+  --color-cti-low: #22c55e;
+  --color-cti-moderate: #3b82f6;
+  --color-cti-high: #a855f7;
+  --color-cti-critical: #ef4444;
+
+  --radius-card: 0.5rem;
+  --radius-control: 0.25rem;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Phase 4 §7 — motion reduction accessibility requirement */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
