@@ -2,7 +2,7 @@
  * Decision Engine models. Depends on domain.ts, graph.ts, and risk.ts —
  * one direction down the dependency order, never the reverse.
  */
-import type { Request } from './domain'
+import type { Allocation, Process, Request, Resource } from './domain'
 import type { Graph } from './graph'
 import type { CTIResult } from './risk'
 
@@ -28,6 +28,8 @@ export type PolicyType = (typeof PolicyType)[keyof typeof PolicyType]
 
 export const DecisionReason = {
   SafetyGateUnsafe: 'SafetyGateUnsafe',
+  /** Classical WFG baseline grants: the shared Safety Gate found no resulting cycle. Added alongside SafetyGateUnsafe, which already covers that policy's Hold case. */
+  WfgSafeState: 'WfgSafeState',
   BankersSafeState: 'BankersSafeState',
   BankersUnsafeState: 'BankersUnsafeState',
   ResourceUnavailable: 'ResourceUnavailable',
@@ -49,6 +51,7 @@ export type DecisionTrace =
   | {
       readonly reason:
         | typeof DecisionReason.SafetyGateUnsafe
+        | typeof DecisionReason.WfgSafeState
         | typeof DecisionReason.BankersSafeState
         | typeof DecisionReason.BankersUnsafeState
         | typeof DecisionReason.ResourceUnavailable
@@ -86,6 +89,21 @@ export interface DecisionContext {
   readonly cti: CTIResult | null
   readonly hysteresisState: HysteresisState | null
   readonly currentTick: number
+  /**
+   * Full process/resource/allocation state, needed by BankersPolicy to run
+   * genuine per-process Need/Max Banker's-algorithm math (Need = Maximum -
+   * Allocation across every process and resource, not just the single
+   * resource `request` targets) — data isSafeToGrant's WFG-only ground
+   * truth doesn't carry. Kept as three flat domain-typed fields rather than
+   * an embedded SimulationState: simulation.ts already depends on this
+   * file for Decision/PolicyType, so embedding SimulationState here would
+   * create a circular type dependency; a flat field also avoids a second,
+   * potentially-divergent copy of data already represented by `request`
+   * and `graph` above.
+   */
+  readonly processes: readonly Process[]
+  readonly resources: readonly Resource[]
+  readonly allocations: readonly Allocation[]
 }
 
 /**
