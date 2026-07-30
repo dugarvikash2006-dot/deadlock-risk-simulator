@@ -23,20 +23,39 @@
  * delegate to the existing engines (SimulationEngine, @engine/history)
  * for anything that isn't plain state storage. No component should
  * construct its own engine instance or duplicate this state.
+ *
+ * Analysis integration (Step 12): a single effect watches
+ * simulation.simulationState and, whenever it changes, calls
+ * AnalysisCoordinator's runAnalysis() and feeds the result into
+ * ComparisonStore via applyAnalysisResult(). Since SimulationEngine
+ * always returns a new SimulationState object (Step 4), this one effect
+ * uniformly covers every trigger the task calls out — initialize, tick,
+ * each auto-tick during play, and reset — without needing to distinguish
+ * which action caused the change. This is coordination (call an existing
+ * pure function, thread its result into a setter), not business logic;
+ * the actual analysis work happens entirely inside runAnalysis() and the
+ * engines it calls, not in this component.
  */
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { useSimulationSlice } from './simulationSlice'
 import { useComparisonSlice } from './comparisonSlice'
 import { useHistorySlice } from './replaySlice'
 import { useSettingsSlice } from './settingsSlice'
 import { StoreContext } from './storeContext'
+import { runAnalysis } from './analysisCoordinator'
 
 export function StoreProvider({ children }: { readonly children: ReactNode }) {
   const simulation = useSimulationSlice()
   const comparison = useComparisonSlice()
   const history = useHistorySlice(simulation.history)
   const settings = useSettingsSlice()
+
+  const { simulationState } = simulation
+  const { applyAnalysisResult } = comparison
+  useEffect(() => {
+    applyAnalysisResult(runAnalysis(simulationState))
+  }, [simulationState, applyAnalysisResult])
 
   const value = useMemo(
     () => ({ simulation, comparison, history, settings }),

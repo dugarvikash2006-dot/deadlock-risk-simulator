@@ -9,6 +9,7 @@
  */
 export * from './SafetyGate'
 export * from './HysteresisController'
+export * from './BankerAdapter'
 export * from './policies/BankersPolicy'
 export * from './policies/ClassicalWfgPolicy'
 export * from './policies/CtiGraduatedPolicy'

@@ -6,7 +6,6 @@
  * never allocates or releases anything itself; @engine/banker's
  * simulateAllocation() already guarantees that by construction (Step 6).
  */
-import { ProcessStatus } from '@shared-types/domain'
 import {
   DecisionOutcome,
   DecisionReason,
@@ -18,57 +17,7 @@ import type {
   DecisionPolicy,
 } from '@shared-types/decision'
 import { createBankerSystemState, simulateAllocation } from '@engine/banker'
-import type { Matrix, Vector } from '@engine/banker'
-import { sum } from '@utils/array'
-
-interface BankerInputs {
-  readonly processIds: readonly string[]
-  readonly resourceIds: readonly string[]
-  readonly maximum: Matrix
-  readonly allocation: Matrix
-  readonly totalResources: Vector
-}
-
-/**
- * Adapts DecisionContext's id-keyed domain data into the positional
- * matrices @engine/banker expects. This conversion belongs here, not in
- * banker/ itself — banker/ stays decoupled from src/types/domain.ts (see
- * NeedMatrix.ts), so translating between the two representations is the
- * Decision Engine's job. Completed processes are excluded: they hold
- * nothing and claim nothing further, the same convention
- * WaitForGraphBuilder.ts uses for graph nodes.
- */
-function buildBankerInputs(context: DecisionContext): BankerInputs {
-  const liveProcesses = context.processes.filter(
-    (process) => process.status !== ProcessStatus.Completed,
-  )
-  const processIds = liveProcesses.map((process) => process.id)
-  const resourceIds = context.resources.map((resource) => resource.id)
-
-  const maximum = liveProcesses.map((process) =>
-    resourceIds.map((resourceId) =>
-      Object.hasOwn(process.maxClaim, resourceId)
-        ? process.maxClaim[resourceId]
-        : 0,
-    ),
-  )
-  const allocation = liveProcesses.map((process) =>
-    resourceIds.map((resourceId) =>
-      sum(
-        context.allocations
-          .filter(
-            (a) => a.processId === process.id && a.resourceId === resourceId,
-          )
-          .map((a) => a.unitsHeld),
-      ),
-    ),
-  )
-  const totalResources = context.resources.map(
-    (resource) => resource.totalInstances,
-  )
-
-  return { processIds, resourceIds, maximum, allocation, totalResources }
-}
+import { buildBankerAdapterInputs } from '../BankerAdapter'
 
 function decision(
   context: DecisionContext,
@@ -103,7 +52,11 @@ export const BankersPolicy: DecisionPolicy = {
     }
 
     const { processIds, resourceIds, maximum, allocation, totalResources } =
-      buildBankerInputs(context)
+      buildBankerAdapterInputs(
+        context.processes,
+        context.resources,
+        context.allocations,
+      )
     const created = createBankerSystemState(
       processIds,
       resourceIds,

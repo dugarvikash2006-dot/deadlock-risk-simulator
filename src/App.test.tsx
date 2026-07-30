@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest'
 import App from './App'
 
 describe('App', () => {
-  it('renders the scaffold-ready heading', () => {
+  it('renders the dashboard', () => {
     render(<App />)
-    expect(
-      screen.getByText('Graduated Deadlock Avoidance — Scaffold Ready'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Controls')).toBeInTheDocument()
+    expect(screen.getByText('Processes')).toBeInTheDocument()
+    expect(screen.getByText('Timeline')).toBeInTheDocument()
   })
 })
